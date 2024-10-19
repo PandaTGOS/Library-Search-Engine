@@ -1,15 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Search</title>
-</head>
-<body>
-    <h1>Search for Books</h1>
-    <form method="POST" action="/search">
-        <input type="text" name="query" placeholder="Enter book title or keyword" required>
-        <button type="submit">Search</button>
-    </form>
-</body>
-</html>
+{% extends "base.html" %} {% block content %}
+<div class="text-center fade-in">
+  <h1 class="text-4xl font-bold mb-8">Welcome to Library Search Engine</h1>
+  <form action="{{ url_for('search') }}" method="POST" class="max-w-md mx-auto">
+    <div class="flex items-center border-b border-b-2 border-blue-500 py-2">
+      <input
+        class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none"
+        type="text"
+        name="query"
+        placeholder="Search for books..."
+        aria-label="Search query"
+      />
+      <button
+        class="flex-shrink-0 bg-blue-500 hover:bg-blue-700 border-blue-500 hover:border-blue-700 text-sm border-4 text-white py-1 px-2 rounded"
+        type="submit"
+      >
+        Search
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

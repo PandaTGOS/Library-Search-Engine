@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Search Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+      .transition-all {
+        transition: all 0.3s ease;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col">
+    <nav class="bg-blue-600 text-white p-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <a href="{{ url_for('index') }}" class="text-2xl font-bold"
+          >Library Search Engine</a
+        >
+        <div>
+          {% if current_user.is_authenticated %}
+          <span class="mr-4">Welcome, {{ current_user.username }}</span>
+          <a
+            href="{{ url_for('logout') }}"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all"
+            >Logout</a
+          >
+          {% else %}
+          <a
+            href="{{ url_for('login') }}"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2 transition-all"
+            >Login</a
+          >
+          <a
+            href="{{ url_for('register') }}"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-all"
+            >Register</a
+          >
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    <main class="container mx-auto mt-8 px-4 flex-grow">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="bg-{{ category }}-100 border border-{{ category }}-400 text-{{ category }}-700 px-4 py-3 rounded relative mb-4 fade-in"
+        role="alert"
+      >
+        <span class="block sm:inline">{{ message }}</span>
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-200 text-center p-4 mt-8">
+      <p>&copy; 2024 Library Search Engine. All rights reserved.</p>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+        document.querySelectorAll("input, button").forEach((element) => {
+          element.classList.add("transition-all");
+        });
+      });
+    </script>
+  </body>
+</html>
