@@ -1,22 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results</title>
-</head>
-<body>
-    <h1>Search Results</h1>
-    <ul>
-        {% for result in results %}
-            <li>
-                <h2>{{ result['book Title'] }}</h2>
-                <p>{{ result['book Plot'] }}</p>
-                <p>Relevance: {{ result['Relevance'] }}%</p>
-                <img src="{{ result['Image_Link'] }}" alt="{{ result['book Title'] }}" width="100">
-            </li>
-        {% endfor %}
-    </ul>
-    <a href="/">Back to search</a>
-</body>
-</html>
+{% extends "base.html" %} {% block content %}
+<h1 class="text-3xl font-bold mb-8">Search Results</h1>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  {% for book in results %}
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <img
+      src="{{ book.Image_Link }}"
+      alt="{{ book.book_Title }}"
+      class="w-full h-64 object-cover"
+    />
+    <div class="p-4">
+      <h2 class="text-xl font-semibold mb-2">{{ book.book_Title }}</h2>
+      <p class="text-gray-600 mb-4">{{ book.book_Plot }}</p>
+      <p class="text-sm text-blue-600 font-semibold">
+        Relevance: {{ book.Relevance }}%
+      </p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

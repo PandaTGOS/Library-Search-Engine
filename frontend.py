@@ -1,5 +1,10 @@
 import pickle
 from flask import Flask, render_template, request
+import MySQLdb
+from MySQLdb.cursors import DictCursor
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask import flash, redirect, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 import spacy
 import string
@@ -12,6 +17,106 @@ from operator import itemgetter
 import unicodedata
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = '2006'
+app.config['MYSQL_DB'] = 'auth'
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+def get_db_connection():
+    return MySQLdb.connect(
+        host=app.config['MYSQL_HOST'],
+        user=app.config['MYSQL_USER'],
+        passwd=app.config['MYSQL_PASSWORD'],
+        db=app.config['MYSQL_DB'],
+        cursorclass=DictCursor
+    )
+    
+class User(UserMixin):
+    def __init__(self, id, username, email):
+        self.id = id
+        self.username = username
+        self.email = email
+
+    @staticmethod
+    def get(user_id):
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+                user = cursor.fetchone()
+                if user:
+                    return User(id=user['id'], username=user['username'], email=user['email'])
+        finally:
+            conn.close()
+        return None
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+                user = cursor.fetchone()
+                if user and check_password_hash(user['password_hash'], password):
+                    user_obj = User(id=user['id'], username=user['username'], email=user['email'])
+                    login_user(user_obj)
+                    return redirect(url_for('index'))
+                flash('Invalid username or password')
+        except MySQLdb.Error as e:
+            flash(f'An error occurred: {str(e)}')
+        finally:
+            conn.close()
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
+                if cursor.fetchone():
+                    flash('Username or email already exists.')
+                    return render_template('register.html')
+                
+                hashed_password = generate_password_hash(password)
+                cursor.execute("INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+                               (username, email, hashed_password))
+                conn.commit()
+                flash('Registration successful. Please log in.')
+                return redirect(url_for('login'))
+        except MySQLdb.Error as e:
+            conn.rollback()
+            flash(f'An error occurred: {str(e)}')
+        finally:
+            conn.close()
+    return render_template('register.html')
 
 # Load dataset
 dataset = "Book_Dataset_1.csv"
@@ -80,10 +185,12 @@ book_lsi_corpus = gensim.corpora.MmCorpus('book_lsi_model_mm')
 book_index = MatrixSimilarity(book_lsi_corpus, num_features = book_lsi_corpus.num_terms)
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 @app.route('/search', methods=['POST'])
+@login_required
 def search():
     query = request.form['query']
     results = search_similar_books(query, dictionary)
